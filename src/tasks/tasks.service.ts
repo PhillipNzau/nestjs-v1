@@ -1,53 +1,62 @@
 import {Injectable, NotFoundException} from "@nestjs/common";
-import { Task, TaskStatus } from "./tasks.model";
+import { TaskStatus } from "./tasks-status.model";
 import { v4 as uuid } from "uuid";
 import { CreateTaskDto } from "./dto/create-task-dto";
 import { GetTasksFilterDto } from "./dto/get-tasks-filter.dto";
+import {InjectRepository} from "@nestjs/typeorm";
+import {Task} from "./task.entity";
+import {Repository} from "typeorm";
+
 
 @Injectable()
 
 export class TasksService {
-  private tasks: Task[] = [];
+  constructor(
+      @InjectRepository(Task)
+      private taskRepository: Repository<Task>
+  ) {
+  }
+
+  // private tasks: Task[] = [];
 
   /////////////////
   // Get all tasks
-  getAllTasks(): Task[] {
-    return [...this.tasks];
-  }
-
-  /////////////////
-  // Get filtered task from query params
-  getTasksWithFilters(filterDto: GetTasksFilterDto): Task[] {
+  async getTasks(filterDto: GetTasksFilterDto): Promise<Task[]> {
     const {status, search} = filterDto;
-    let tasks = this.getAllTasks();
+    const query = this.taskRepository.createQueryBuilder('task');
 
     if (status) {
-      tasks = tasks.filter((task: Task) => task.status === status)
+      query.andWhere('task.status = :status', {status})
     }
 
     if (search) {
-      tasks = tasks.filter((task: Task) => task.title.includes(search) || task.description.includes(search) )
+      query.andWhere(
+          'LOWER(task.title) LIKE LOWER(:search) OR LOWER(task.description) LIKE LOWER(:search)', {search: `%${search}%`})
     }
+    const tasks = await query.getMany();
     return tasks;
   }
-  /////////////////
+
+  // /////////////////
   // Add task
-  addTask(createTaskDto: CreateTaskDto): Task {
+  async addTask(createTaskDto: CreateTaskDto): Promise<Task> {
     const {title, description} = createTaskDto
-    const task: Task = {
-      id: uuid(),
+    const task = this.taskRepository.create({
       title,
       description,
       status: TaskStatus.OPEN
-    };
-    this.tasks.push(task);
+    });
+
+    await this.taskRepository.save(task);
+
     return task;
   }
-
-  /////////////////
+  //
+  // /////////////////
   // Get task by id
-  getSingleTask(id: string): Task {
-    const found = this.tasks.find((task: Task) => task.id === id )
+  async getTaskById(id: string): Promise<Task> {
+    const found = await this.taskRepository.findOneBy({id});
+
     if (!found) {
       throw new NotFoundException(`Task with ID "${id}" not found`);
     }
@@ -55,24 +64,27 @@ export class TasksService {
   }
   /////////////////
   // Delete task by ID
-  deleteSingleTask(id: string): void {
-    const found = this.getSingleTask(id)
-    this.tasks= this.tasks.filter((task: Task) => task.id !== id)
+  async deleteTaskById(id: string): Promise<void> {
+    const result = await this.taskRepository.delete({id})
+    if (result.affected === 0) {
+      throw new NotFoundException(`Task with ID "${id}" not found`);
+    }
   }
 
-  // updateTask(createTaskDto: CreateTaskDto, id: string): Task {
-  //   const {title, description} = createTaskDto
-  //   const task: Task = {
-  //     id = this.tasks.indexOf(id).id,
-  //
-  //   }
-  // }
-
   /////////////////
-  // Updated task status by Id
-  updateTaskStatus(id: string, status: TaskStatus) {
-    const task = this.getSingleTask(id);
-    task.status = status;
-    return task;
+  // Updated task status by id
+  async updateTaskStatusById(id: string, status: TaskStatus): Promise<Task> {
+
+    const task = await this.getTaskById(id);
+    task.status = status
+
+    await this.taskRepository.save(task);
+
+    return task
+    // await this.taskRepository.createQueryBuilder()
+    //     .update(Task)
+    //     .set({ status })
+    //     .where("id = :id", { id })
+    //     .execute()
   }
 }
