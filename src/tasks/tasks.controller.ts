@@ -3,7 +3,7 @@ import {
   ClassSerializerInterceptor,
   Controller,
   Delete,
-  Get,
+  Get, Logger,
   Param,
   Patch,
   Post,
@@ -25,6 +25,7 @@ import { User } from "../auth/user.entity";
 @UseInterceptors(ClassSerializerInterceptor)
 @UseGuards(AuthGuard())
 export class TasksController {
+  private logger = new Logger('TaskController')
   constructor(private taskService: TasksService) {
   }
 
@@ -33,6 +34,7 @@ export class TasksController {
     @Query() filterDto: GetTasksFilterDto,
     @GetUser() user: User,
     ): Promise<Task[]> {
+    this.logger.verbose(`User "${user.username}" retrieving all tasks. Filters "${JSON.stringify(filterDto)}" `)
       return this.taskService.getTasks(filterDto, user);
   }
 
@@ -49,6 +51,7 @@ export class TasksController {
     @Body() createTaskDto: CreateTaskDto,
     @GetUser() user: User,
   ): Promise<Task> {
+    this.logger.verbose(`this user creating task with ${JSON.stringify(createTaskDto)}`)
     return this.taskService.addTask(createTaskDto, user);
   }
 

@@ -4,6 +4,7 @@ import {AppService} from './app.service';
 import {TasksModule} from "./tasks/tasks.module";
 import {AuthModule} from './auth/auth.module';
 import {TypeOrmModule} from "@nestjs/typeorm";
+import { UserModule } from './user/user.module';
 
 // 172.17.0.3
 @Module({
@@ -19,7 +20,8 @@ import {TypeOrmModule} from "@nestjs/typeorm";
         database: 'task-management',
         autoLoadEntities: true,
         synchronize: true,
-    })],
+    }),
+        UserModule],
     controllers: [AppController],
     providers: [AppService],
 })
