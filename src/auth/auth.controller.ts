@@ -8,8 +8,13 @@ export class AuthController {
     }
 
     @Post('/signup')
-    async singUp(@Body() authCredentialsDtop: AuthCredentialsDto): Promise<void> {
-        return this.authService.createUser(authCredentialsDtop);
+    async signUp(@Body() authCredentialsDto: AuthCredentialsDto): Promise<void> {
+        return this.authService.createUser(authCredentialsDto);
+    }
+
+    @Post('/signin')
+    async signIn(@Body() authCredentialsDto: AuthCredentialsDto): Promise<string> {
+        return this.authService.signIn(authCredentialsDto);
     }
 
 }
