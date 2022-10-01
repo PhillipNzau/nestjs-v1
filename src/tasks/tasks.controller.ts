@@ -12,7 +12,6 @@ import {
   UseInterceptors
 } from "@nestjs/common";
 import { TasksService } from "./tasks.service";
-import { TaskStatus } from "./tasks-status.model";
 import { CreateTaskDto } from "./dto/create-task-dto";
 import { GetTasksFilterDto } from "./dto/get-tasks-filter.dto";
 import {UpdateTaskStatusDto} from "./dto/update-task-status.dto";
@@ -26,8 +25,9 @@ import { User } from "../auth/user.entity";
 @UseGuards(AuthGuard())
 export class TasksController {
   private logger = new Logger('TaskController')
-  constructor(private taskService: TasksService) {
-  }
+  constructor(
+    private taskService: TasksService,
+  ) {}
 
   @Get()
   async getTasks(
